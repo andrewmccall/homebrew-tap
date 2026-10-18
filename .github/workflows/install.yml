@@ -2,7 +2,7 @@ name: Install published formula
 on:
   workflow_dispatch:
   push:
-    paths: ['Formula/**', '.github/workflows/install.yml']
+    paths: ['Formula/**']
 permissions:
   contents: read
 jobs:
