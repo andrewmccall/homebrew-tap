@@ -1,0 +1,38 @@
+name: Update Sproozi
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+permissions:
+  contents: write
+concurrency:
+  group: formula-update
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: macos-15
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - name: Update from the latest public release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 update.py
+      - name: Build and test the formula
+        run: |
+          brew tap andrewmccall/tap "$GITHUB_WORKSPACE"
+          mkdir -p "$(brew --repo andrewmccall/tap)/Formula"
+          cp Formula/sproozi.rb "$(brew --repo andrewmccall/tap)/Formula/sproozi.rb"
+          brew install --build-from-source andrewmccall/tap/sproozi
+          brew test andrewmccall/tap/sproozi
+          brew audit --strict andrewmccall/tap/sproozi
+          sproozi --version
+      - name: Publish the tested formula
+        run: |
+          git add Formula/sproozi.rb
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Update Sproozi to the latest release'
+          git push
