@@ -6,14 +6,22 @@ import json
 import os
 from pathlib import Path
 import re
+import sys
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 ROOT = 'https://api.github.com/repos/andrewmccall/sproozi'
 headers = {'Accept': 'application/vnd.github+json', 'User-Agent': 'sproozi-homebrew-tap'}
 if os.environ.get('GH_TOKEN'):
     headers['Authorization'] = 'Bearer ' + os.environ['GH_TOKEN']
-with urlopen(Request(ROOT + '/releases/latest', headers=headers), timeout=60) as response:
-    release = json.load(response)
+try:
+    with urlopen(Request(ROOT + '/releases/latest', headers=headers), timeout=60) as response:
+        release = json.load(response)
+except HTTPError as error:
+    if error.code != 404:
+        raise
+    print('No stable Sproozi release is available yet')
+    sys.exit(0)
 tag = release['tag_name']
 if release['draft'] or release['prerelease'] or not re.fullmatch(r'v[0-9]+\.[0-9]+\.[0-9]+', tag):
     raise ValueError('Expected a stable published version')

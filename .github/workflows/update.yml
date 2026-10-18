@@ -20,6 +20,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: python3 update.py
       - name: Build and test the formula
+        if: hashFiles('Formula/sproozi.rb') != ''
         run: |
           brew tap andrewmccall/tap "$GITHUB_WORKSPACE"
           mkdir -p "$(brew --repo andrewmccall/tap)/Formula"
@@ -29,6 +30,7 @@ jobs:
           brew audit --strict andrewmccall/tap/sproozi
           sproozi --version
       - name: Publish the tested formula
+        if: hashFiles('Formula/sproozi.rb') != ''
         run: |
           git add Formula/sproozi.rb
           if git diff --cached --quiet; then exit 0; fi
