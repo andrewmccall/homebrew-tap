@@ -1,0 +1,30 @@
+name: Install published formula
+on:
+  workflow_dispatch:
+  push:
+    paths: ['Formula/**', '.github/workflows/install.yml']
+permissions:
+  contents: read
+jobs:
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, ubuntu-24.04]
+    runs-on: ${{ matrix.runner }}
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+    steps:
+      - name: Add Homebrew to PATH
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == Linux ]]; then
+            echo /home/linuxbrew/.linuxbrew/bin >> "$GITHUB_PATH"
+          fi
+      - name: Install and test the public tap
+        run: |
+          brew install andrewmccall/tap/sproozi
+          brew test andrewmccall/tap/sproozi
+          brew audit --strict andrewmccall/tap/sproozi
+          sproozi --version
+          sproozi --help
