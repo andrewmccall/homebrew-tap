@@ -11,19 +11,18 @@ def render(version, url, digest):
   desc "Run agents with limited permissions in Linux containers"
   homepage "https://github.com/andrewmccall/sproozi"
   url "URL"
-  version "VERSION"
-  sha256 "SHA256"
+VERSION_LINE  sha256 "SHA256"
   license "Apache-2.0"
 
   depends_on "go" => :build
 
   def install
     metadata = JSON.parse((buildpath/"release.json").read)
-    odie "Source version mismatch" unless metadata.fetch("version") == version.to_s
+    odie "Source version mismatch" if metadata.fetch("version") != version.to_s
     ENV["CGO_ENABLED"] = "0"
     ENV["GOTOOLCHAIN"] = "local"
     ENV["GOPROXY"] = "off"
-    ldflags = "-s -w -X main.version=#{version} -X main.commit=#{metadata.fetch('commit')} -X main.date=#{metadata.fetch('date')}"
+    ldflags = "-s -w -X main.version=#{version} -X main.commit=#{metadata.fetch("commit")} -X main.date=#{metadata.fetch("date")}"
     system "go", "build", "-mod=vendor", *std_go_args(ldflags: ldflags), "./cmd/sproozi"
   end
 
@@ -32,4 +31,4 @@ def render(version, url, digest):
     assert_match "Usage: sproozi COMMAND", shell_output("#{bin}/sproozi --help")
   end
 end
-'''.replace('URL', url).replace('VERSION', version).replace('SHA256', digest)
+'''.replace('VERSION_LINE', f'  version "{version}"\n' if '-' in version else '').replace('URL', url).replace('SHA256', digest)

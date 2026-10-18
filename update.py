@@ -49,7 +49,9 @@ formula = render(version, base + name, digest)
 path = Path('Formula/sproozi.rb')
 path.parent.mkdir(exist_ok=True)
 if path.exists():
-    current = re.search(r'^  version "([0-9.]+)"$', path.read_text(), re.M)
+    current = re.search(r'/releases/download/v([0-9]+\.[0-9]+\.[0-9]+)/', path.read_text())
+    if current is None:
+        raise ValueError('Existing formula has no stable release URL')
     if current and tuple(map(int, current[1].split('.'))) > tuple(map(int, version.split('.'))):
         raise ValueError('Refusing a version downgrade')
 path.write_text(formula)
