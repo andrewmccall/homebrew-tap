@@ -2,7 +2,7 @@ class Sproozi < Formula
   desc "Run agents with limited permissions in Linux containers"
   homepage "https://github.com/andrewmccall/sproozi"
   url "https://github.com/andrewmccall/sproozi/releases/download/v0.1.0/sproozi_0.1.0_source.tar.gz"
-  sha256 "3966d0c9bd2c801a5ad5508e0ac799bab2a1565248b6b268cebeb4809e5120ba"
+  sha256 "218fedda21b34577c1b86dbc30a7c8ba290d7780036bc21230ae1ea09e130fc5"
   license "Apache-2.0"
 
   depends_on "go" => :build
