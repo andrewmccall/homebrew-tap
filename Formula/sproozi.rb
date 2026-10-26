@@ -1,9 +1,16 @@
 class Sproozi < Formula
   desc "Run agents with limited permissions in Linux containers"
   homepage "https://github.com/andrewmccall/sproozi"
-  url "https://github.com/andrewmccall/sproozi/releases/download/v0.2.0/sproozi_0.2.0_source.tar.gz"
-  sha256 "5aed1f2c61c153753a8dc3ea08cc7891b874a4d30db5c1f001bf8ca1c95d2545"
+  url "https://github.com/andrewmccall/sproozi/releases/download/v0.2.1/sproozi_0.2.1_source.tar.gz"
+  sha256 "c8a10f957268c52edbffece8ca585b3ab37ad42719f6334efa94bcf03593dcf5"
   license "Apache-2.0"
+
+  bottle do
+    root_url "https://github.com/andrewmccall/homebrew-tap/releases/download/bottles-40396502052-1"
+    sha256 cellar: :any_skip_relocation, arm64_sequoia: "ac38e3d4f407b5a4e9529d2307f2085d26acf060fbca1d6f560c70d87e56799c"
+    sha256 cellar: :any_skip_relocation, arm64_linux:   "d242160f3e72951ff8ea41fef5649db060563c64b4d560c156f3acbb7cdcf05b"
+    sha256 cellar: :any_skip_relocation, x86_64_linux:  "76072ea510162f46a7dc797d0c601400c1148ba39ae974f86db248a82dd26171"
+  end
 
   depends_on "go" => :build
 
