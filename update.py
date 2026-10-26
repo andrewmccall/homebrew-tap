@@ -54,5 +54,11 @@ if path.exists():
         raise ValueError('Existing formula has no stable release URL')
     if current and tuple(map(int, current[1].split('.'))) > tuple(map(int, version.split('.'))):
         raise ValueError('Refusing a version downgrade')
+    # Keep published bottle checksums when polling the same source release.
+    existing = path.read_text()
+    if (f'  url "{base + name}"' in existing
+            and f'  sha256 "{digest}"' in existing):
+        print(tag + ' (unchanged)')
+        sys.exit(0)
 path.write_text(formula)
 print(tag)

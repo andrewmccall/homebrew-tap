@@ -2,6 +2,7 @@ name: Install published formula
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     paths: ['Formula/**']
 permissions:
   contents: read
@@ -10,20 +11,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-15, ubuntu-24.04]
+        # Homebrew ships no Go bottle for Intel macOS (Tier 3), so it is not bottled.
+        runner: [macos-15, ubuntu-24.04, ubuntu-24.04-arm]
     runs-on: ${{ matrix.runner }}
     env:
       HOMEBREW_NO_AUTO_UPDATE: '1'
     steps:
-      - name: Add Homebrew to PATH
-        shell: bash
-        run: |
-          if [[ "$RUNNER_OS" == Linux ]]; then
-            echo /home/linuxbrew/.linuxbrew/bin >> "$GITHUB_PATH"
-          fi
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: Homebrew/actions/setup-homebrew@d482da0e602890d3160aade42e72c8556103bf04
       - name: Install and test the public tap
         run: |
-          brew install andrewmccall/tap/sproozi
+          # Source-only formulas are published before their bottles.
+          if grep -q 'bottle do' Formula/sproozi.rb; then
+            brew install --force-bottle andrewmccall/tap/sproozi
+          else
+            brew install andrewmccall/tap/sproozi
+          fi
           brew test andrewmccall/tap/sproozi
           brew audit --strict andrewmccall/tap/sproozi
           sproozi --version
