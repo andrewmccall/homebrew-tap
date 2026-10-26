@@ -67,8 +67,9 @@ jobs:
           cd bottles
           brew bottle --json --root-url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${BOTTLE_TAG}" andrewmccall/tap/sproozi
           brew uninstall sproozi
-          # brew adds .N to the name when it picks a bottle rebuild number.
-          brew install --force-bottle ./sproozi--*.bottle*.tar.gz
+          # brew adds .N to the name when it picks a bottle rebuild number, and
+          # installs from a file path only with HOMEBREW_DEVELOPER set.
+          HOMEBREW_DEVELOPER=1 brew install --force-bottle ./sproozi--*.bottle*.tar.gz
           brew test andrewmccall/tap/sproozi
           sproozi --version
           sproozi --help
