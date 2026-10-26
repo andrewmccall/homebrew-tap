@@ -121,5 +121,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'Update Sproozi and publish tested bottles'
-          # setup-homebrew re-checks out the tap, so main has no upstream here.
+          # setup-homebrew re-checks out the tap, dropping the upstream branch and
+          # the checkout's credentials; push with the job's GH_TOKEN instead.
+          gh auth setup-git
           git push origin HEAD:main
