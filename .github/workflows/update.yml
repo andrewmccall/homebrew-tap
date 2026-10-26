@@ -1,40 +1,121 @@
 name: Update Sproozi
 on:
   workflow_dispatch:
+  pull_request:
+    paths: ['Formula/**', '*.py', '.github/workflows/update.yml']
   schedule:
     - cron: '17 * * * *'
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: formula-update
   cancel-in-progress: false
 jobs:
-  update:
-    runs-on: macos-15
-    env:
-      HOMEBREW_NO_AUTO_UPDATE: '1'
+  prepare:
+    runs-on: ubuntu-24.04
+    outputs:
+      changed: ${{ steps.formula.outputs.changed }}
+      tag: ${{ steps.formula.outputs.tag }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       - name: Update from the latest public release
+        id: formula
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 update.py
-      - name: Build and test the formula
-        if: hashFiles('Formula/sproozi.rb') != ''
         run: |
-          brew tap andrewmccall/tap "$GITHUB_WORKSPACE"
-          mkdir -p "$(brew --repo andrewmccall/tap)/Formula"
-          cp Formula/sproozi.rb "$(brew --repo andrewmccall/tap)/Formula/sproozi.rb"
-          brew install --build-from-source andrewmccall/tap/sproozi
+          python3 update.py
+          if [[ ! -f Formula/sproozi.rb ]]; then exit 0; fi
+          if [[ "$GITHUB_EVENT_NAME" != pull_request ]] && git diff --quiet -- Formula/sproozi.rb && grep -q 'bottle do' Formula/sproozi.rb; then exit 0; fi
+          echo 'changed=true' >> "$GITHUB_OUTPUT"
+          echo "tag=bottles-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: steps.formula.outputs.changed == 'true'
+        with:
+          name: source-formula
+          path: Formula/sproozi.rb
+          if-no-files-found: error
+  bottle:
+    needs: prepare
+    if: needs.prepare.outputs.changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, macos-15-intel, ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+      HOMEBREW_NO_INSTALL_CLEANUP: '1'
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: Homebrew/actions/setup-homebrew@d482da0e602890d3160aade42e72c8556103bf04
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: source-formula
+          path: Formula
+      - name: Build, bottle and test
+        env:
+          BOTTLE_TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          tap="$(brew --repo andrewmccall/tap)"
+          if [[ ! Formula/sproozi.rb -ef "$tap/Formula/sproozi.rb" ]]; then
+            cp Formula/sproozi.rb "$tap/Formula/sproozi.rb"
+          fi
+          brew install --build-bottle andrewmccall/tap/sproozi
           brew test andrewmccall/tap/sproozi
           brew audit --strict andrewmccall/tap/sproozi
+          mkdir bottles
+          cd bottles
+          brew bottle --json --root-url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${BOTTLE_TAG}" andrewmccall/tap/sproozi
+          brew uninstall sproozi
+          brew install --force-bottle ./sproozi--*.bottle.tar.gz
+          brew test andrewmccall/tap/sproozi
           sproozi --version
+          sproozi --help
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: bottles-${{ matrix.runner }}
+          path: bottles/*
+          if-no-files-found: error
+  publish:
+    if: github.event_name != 'pull_request'
+    needs: [prepare, bottle]
+    runs-on: macos-15
+    permissions:
+      contents: write
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+      GH_TOKEN: ${{ github.token }}
+      BOTTLE_TAG: ${{ needs.prepare.outputs.tag }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: Homebrew/actions/setup-homebrew@d482da0e602890d3160aade42e72c8556103bf04
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: source-formula
+          path: Formula
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: bottles-*
+          merge-multiple: true
+          path: bottles
+      - name: Merge bottle checksums and publish assets
+        run: |
+          tap="$(brew --repo andrewmccall/tap)"
+          if [[ ! Formula/sproozi.rb -ef "$tap/Formula/sproozi.rb" ]]; then
+            cp Formula/sproozi.rb "$tap/Formula/sproozi.rb"
+          fi
+          brew bottle --merge --write --no-commit bottles/*.bottle.json
+          if [[ ! Formula/sproozi.rb -ef "$tap/Formula/sproozi.rb" ]]; then
+            cp "$tap/Formula/sproozi.rb" Formula/sproozi.rb
+          fi
+          python3 bottles.py bottles
+          gh release create "$BOTTLE_TAG" bottles/*.bottle.tar.gz --title "Sproozi bottles" --notes 'Tested Homebrew bottles for macOS and Linux.' --latest=false
+          brew install --force-bottle andrewmccall/tap/sproozi
+          brew test andrewmccall/tap/sproozi
       - name: Publish the tested formula
-        if: hashFiles('Formula/sproozi.rb') != ''
         run: |
           git add Formula/sproozi.rb
-          if git diff --cached --quiet; then exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'Update Sproozi to the latest release'
+          git commit -m 'Update Sproozi and publish tested bottles'
           git push
