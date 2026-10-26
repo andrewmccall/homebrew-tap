@@ -16,6 +16,9 @@ brew install --build-from-source andrewmccall/tap/sproozi
 
 Go is a build dependency for source installs, including systems without a
 compatible bottle.
+It also installs the release source, without vendored modules, in
+`$(brew --prefix)/share/sproozi`, so `sproozi images build` can build the
+container images without downloading it.
 Installation does not start a service or configure credentials.
 See [Sproozi setup](https://github.com/andrewmccall/sproozi/tree/main/docs).
 

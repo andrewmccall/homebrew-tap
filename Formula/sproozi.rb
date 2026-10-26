@@ -15,10 +15,14 @@ class Sproozi < Formula
     ENV["GOPROXY"] = "off"
     ldflags = "-s -w -X main.version=#{version} -X main.commit=#{metadata.fetch("commit")} -X main.date=#{metadata.fetch("date")}"
     system "go", "build", "-mod=vendor", *std_go_args(ldflags: ldflags), "./cmd/sproozi"
+    # `sproozi images build` uses this release source; image builds fetch modules themselves.
+    pkgshare.install (Dir.glob("*", File::FNM_DOTMATCH) - [".", "..", "vendor"])
   end
 
   test do
     assert_match "sproozi #{version} (commit ", shell_output("#{bin}/sproozi --version")
     assert_match "Usage: sproozi COMMAND", shell_output("#{bin}/sproozi --help")
+    assert_equal version.to_s, JSON.parse((pkgshare/"release.json").read).fetch("version")
+    assert_path_exists pkgshare/"hack/release/docker-bake.hcl"
   end
 end
