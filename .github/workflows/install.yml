@@ -2,6 +2,7 @@ name: Install published formula
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     paths: ['Formula/**']
 permissions:
   contents: read
@@ -19,7 +20,12 @@ jobs:
       - uses: Homebrew/actions/setup-homebrew@d482da0e602890d3160aade42e72c8556103bf04
       - name: Install and test the public tap
         run: |
-          brew install --force-bottle andrewmccall/tap/sproozi
+          # Source-only formulas are published before their bottles.
+          if grep -q 'bottle do' Formula/sproozi.rb; then
+            brew install --force-bottle andrewmccall/tap/sproozi
+          else
+            brew install andrewmccall/tap/sproozi
+          fi
           brew test andrewmccall/tap/sproozi
           brew audit --strict andrewmccall/tap/sproozi
           sproozi --version
