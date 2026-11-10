@@ -1,15 +1,15 @@
 class Sproozi < Formula
   desc "Run agents with limited permissions in Linux containers"
   homepage "https://github.com/andrewmccall/sproozi"
-  url "https://github.com/andrewmccall/sproozi/releases/download/v0.2.4/sproozi_0.2.4_source.tar.gz"
-  sha256 "e407de4a0e76d93f7272dcc03a7066df5cbc0c1e113e1223a48a1f8f22172165"
+  url "https://github.com/andrewmccall/sproozi/releases/download/v0.2.5/sproozi_0.2.5_source.tar.gz"
+  sha256 "f88148870f2c04a09bac852310f67529d8fee10a630f743379fe0a468431deae"
   license "Apache-2.0"
 
   bottle do
-    root_url "https://github.com/andrewmccall/homebrew-tap/releases/download/bottles-42021122240-1"
-    sha256 cellar: :any_skip_relocation, arm64_sequoia: "9290e5f19b924ded64ae2a4a52fd3da161573ca1f9af9cc4c215388d75cdae6d"
-    sha256 cellar: :any_skip_relocation, arm64_linux:   "c691ed936da16661a8751c485adaf843a6f4a070a3417ce84bb862dd19664daf"
-    sha256 cellar: :any_skip_relocation, x86_64_linux:  "aa43e012e77ad3a86b58e5be10c36c653d54443c987810b4e6dd96fdf9f22c6c"
+    root_url "https://github.com/andrewmccall/homebrew-tap/releases/download/bottles-42884291033-1"
+    sha256 cellar: :any_skip_relocation, arm64_sequoia: "20bac9ae61f76b46588803ee33be9d21e7ae1fd924f81e57113963c45854c0b3"
+    sha256 cellar: :any_skip_relocation, arm64_linux:   "5578b82fc4a9884070894415041168aa27a61c5be3576210a1eebebb7e4896c9"
+    sha256 cellar: :any_skip_relocation, x86_64_linux:  "1b6dcc6ffb5d0cddfe0d5208a3eaf5180349e81ca90a585a2e27429d7390a3c0"
   end
 
   depends_on "go" => :build
